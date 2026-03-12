@@ -21,15 +21,19 @@ long	get_time_ms(void)
 		+ (long long)time.tv_usec / 1000);
 }
 
-void	smart_sleep(t_table *table, long wakeup)
+void smart_sleep(t_table *table, long time_to_sleep)
 {
-	long	start;
-
-	start = get_time_ms() + wakeup;
-	while (get_time_ms() < start)
-	{
-		if (table->stop_simulation)
-			break ;
-		usleep(100);
-	}
+    long start = get_time_ms();
+    while (get_time_ms() - start < time_to_sleep)
+    {
+        pthread_mutex_lock(&table->lock_mtx);
+        if (table->stop_simulation) // Agora a leitura está protegida!
+        {
+            pthread_mutex_unlock(&table->lock_mtx);
+            return ;
+        }
+        pthread_mutex_unlock(&table->lock_mtx);
+        usleep(500);
+    }
 }
+⁩
